@@ -25,7 +25,15 @@ function calcularEdad(fechaNacimiento) {
 }
 
 app.post('/registro', async (req, res) => {
-  const { id, email, nombre_usuario, respuestas, categorias, fecha_nacimiento } = req.body
+  const {
+    id,
+    email,
+    nombre_usuario,
+    respuestas,
+    categorias,
+    fecha_nacimiento,
+    partido_politico
+  } = req.body
 
   if (!id || !email || !nombre_usuario || !respuestas || respuestas.length < 5 || !categorias || !fecha_nacimiento) {
     return res.status(400).json({ mensaje: 'Faltan datos obligatorios' })
@@ -34,30 +42,36 @@ app.post('/registro', async (req, res) => {
   const edad = calcularEdad(fecha_nacimiento)
   if (edad < 14) {
     console.log(`🛑 Usuario menor de 14 años: ${email}, eliminando...`)
-
     try {
       await supabase.auth.admin.deleteUser(id)
       await supabase.from('usuarios_vitai').delete().eq('id', id)
     } catch (err) {
       console.error('❌ Error eliminando al menor:', err)
     }
-
     return res.status(403).json({ mensaje: 'Debes tener al menos 14 años', eliminado: true })
   }
 
-const prompt = `
-Tu tarea es generar una breve descripción de un usuario basada en sus respuestas tipo test. La descripción debe estar en tercera persona, con tono fresco, directo, algo irónico o reflexivo, como si un amigo cercano lo estuviera describiendo. No debe parecer que la escribe él mismo, y no debes repetir las preguntas ni incluir sus letras (A, B...).
+  // 🎯 PROMPT PARA IA: genera resumen que otra IA usará para actuar como persona real
+  const prompt = `
+Eres una IA que debe generar un resumen interno y completo sobre una persona, a partir de su comportamiento, preferencias y respuestas. Este resumen **será leído por otra IA** que luego simulará ser esa persona en una red social (Vitai²).
 
-Usa 2-3 frases que transmitan su personalidad. Este resumen aparecerá en su perfil de una red social con estética Gen Z.
+Tu objetivo es crear un perfil coherente, interesante y lleno de matices. Usa tercera persona. No adornes ni justifiques, solo describe con claridad lo que esa persona podría ser, sentir o pensar.
 
-Respuestas del usuario:
-- ${respuestas[0]}
-- ${respuestas[1]}
-- ${respuestas[2]}
-- ${respuestas[3]}
-- ${respuestas[4]}
+Incluye cosas como: forma de expresarse, tipo de humor, ideología, nivel de intensidad emocional, contradicciones, personalidad general, relación con internet, actitudes hacia el conflicto, qué tipo de comunidad valora, qué estilo de publicaciones haría, tono habitual, ideas clave, etc.
+
+Toda esta info será usada para que otra IA la represente como si fuera real.
+
+Datos del usuario:
+- Edad: ${edad}
+- Partido político (opcional): ${partido_politico || 'No especificado'}
+- Categorías favoritas: ${categorias.join(', ')}
+- Respuestas tipo test:
+  1. ${respuestas[0]}
+  2. ${respuestas[1]}
+  3. ${respuestas[2]}
+  4. ${respuestas[3]}
+  5. ${respuestas[4]}
 `
-
 
   let descripcion_resumida = 'No disponible'
 
@@ -73,8 +87,8 @@ Respuestas del usuario:
     })
 
     const iaRes = await ia.json()
-    descripcion_resumida = iaRes.response?.trim() || 'Descripción no generada'
-    console.log('🧠 IA generó:', descripcion_resumida)
+    descripcion_resumida = iaRes.response?.trim() || 'Error generando descripción'
+    console.log('🧠 Descripción resumida generada:\n', descripcion_resumida)
   } catch (err) {
     console.error('❌ Error con la IA:', err)
     descripcion_resumida = 'Error con IA'
@@ -87,6 +101,7 @@ Respuestas del usuario:
     fecha_nacimiento,
     respuestas,
     categorias,
+    partido_politico,
     descripcion_resumida
   }])
 
