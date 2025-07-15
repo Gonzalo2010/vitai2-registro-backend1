@@ -61,6 +61,8 @@ Incluye cosas como: forma de expresarse, tipo de humor, ideología, nivel de int
 
 Toda esta info será usada para que otra IA la represente como si fuera real.
 
+No incluyas ningun nombre
+
 Datos del usuario:
 - Edad: ${edad}
 - Partido político (opcional): ${partido_politico || 'No especificado'}
