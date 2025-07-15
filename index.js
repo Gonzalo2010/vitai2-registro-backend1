@@ -13,25 +13,48 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-app.post('/registro', async (req, res) => {
-  const { id, email, nombre_usuario, respuestas } = req.body
+function calcularEdad(fechaNacimiento) {
+  const hoy = new Date()
+  const nacimiento = new Date(fechaNacimiento)
+  let edad = hoy.getFullYear() - nacimiento.getFullYear()
+  const m = hoy.getMonth() - nacimiento.getMonth()
+  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad--
+  }
+  return edad
+}
 
-  if (!id || !email || !nombre_usuario || !respuestas || respuestas.length < 3) {
-    console.error('❌ Datos incompletos recibidos:', req.body)
-    return res.status(400).json({ mensaje: 'Faltan datos o respuestas incompletas' })
+app.post('/registro', async (req, res) => {
+  const { id, email, nombre_usuario, respuestas, categorias, fecha_nacimiento } = req.body
+
+  if (!id || !email || !nombre_usuario || !respuestas || respuestas.length < 5 || !categorias || !fecha_nacimiento) {
+    return res.status(400).json({ mensaje: 'Faltan datos obligatorios' })
+  }
+
+  const edad = calcularEdad(fecha_nacimiento)
+  if (edad < 14) {
+    console.log(`🛑 Usuario menor de 14 años: ${email}, eliminando...`)
+
+    try {
+      await supabase.auth.admin.deleteUser(id)
+      await supabase.from('usuarios_vitai').delete().eq('id', id)
+    } catch (err) {
+      console.error('❌ Error eliminando al menor:', err)
+    }
+
+    return res.status(403).json({ mensaje: 'Debes tener al menos 14 años', eliminado: true })
   }
 
   const prompt = `
-Eres una IA que crea resúmenes de personalidad con estilo irónico, inteligente y directo, para una red social tipo Gen Z donde la gente no quiere descripciones aburridas, sino algo con flow.
+Eres una IA que crea descripciones breves y auténticas con estilo fresco, irónico o introspectivo para una red social tipo Gen Z.
 
-A partir de estas respuestas del usuario, crea una descripción corta, graciosa, auténtica, con un toque irónico o introspectivo si hace falta. Tiene que sonar como si un amigo te describiera con sarcasmo, pero con cariño. No repitas las preguntas. Que no parezca generado por una IA.
+Basado en estas respuestas tipo test, genera una descripción en 2-3 frases, humana, sin repetir las preguntas:
 
-Respuestas del usuario:
-1. ¿Qué te hace único?: ${respuestas[0]}
-2. ¿Qué temas te apasionan?: ${respuestas[1]}
-3. ¿Cómo te describirían tus amigos?: ${respuestas[2]}
-
-Genera una descripción breve (entre 2 y 4 frases), que suene fresca, humana y con personalidad.
+P1: ${respuestas[0]}
+P2: ${respuestas[1]}
+P3: ${respuestas[2]}
+P4: ${respuestas[3]}
+P5: ${respuestas[4]}
 `
 
   let descripcion_resumida = 'No disponible'
@@ -42,35 +65,32 @@ Genera una descripción breve (entre 2 y 4 frases), que suene fresca, humana y c
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openchat',
-        prompt: prompt,
+        prompt,
         stream: false
       })
     })
 
     const iaRes = await ia.json()
-    console.log('🧠 Respuesta de IA:', iaRes)
-
-    descripcion_resumida = iaRes.response?.trim() || 'Error al procesar descripción'
+    descripcion_resumida = iaRes.response?.trim() || 'Descripción no generada'
+    console.log('🧠 IA generó:', descripcion_resumida)
   } catch (err) {
-    console.error('❌ Error al llamar a la IA:', err)
+    console.error('❌ Error con la IA:', err)
     descripcion_resumida = 'Error con IA'
   }
-
-  console.log('📦 Insertando en Supabase:', {
-    id, email, nombre_usuario, respuestas, descripcion_resumida
-  })
 
   const { error } = await supabase.from('usuarios_vitai').insert([{
     id,
     email,
     nombre_usuario,
+    fecha_nacimiento,
     respuestas,
+    categorias,
     descripcion_resumida
   }])
 
   if (error) {
     console.error('❌ Error al insertar en Supabase:', error)
-    return res.status(500).json({ mensaje: 'Error al guardar en la DB', error: error.message })
+    return res.status(500).json({ mensaje: 'Error al guardar en la base de datos' })
   }
 
   res.json({ mensaje: 'Usuario registrado correctamente' })
