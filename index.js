@@ -45,17 +45,19 @@ app.post('/registro', async (req, res) => {
     return res.status(403).json({ mensaje: 'Debes tener al menos 14 años', eliminado: true })
   }
 
-  const prompt = `
-Eres una IA que crea descripciones breves y auténticas con estilo fresco, irónico o introspectivo para una red social tipo Gen Z.
+const prompt = `
+Tu tarea es generar una breve descripción de un usuario basada en sus respuestas tipo test. La descripción debe estar en tercera persona, con tono fresco, directo, algo irónico o reflexivo, como si un amigo cercano lo estuviera describiendo. No debe parecer que la escribe él mismo, y no debes repetir las preguntas ni incluir sus letras (A, B...).
 
-Basado en estas respuestas tipo test, genera una descripción en 2-3 frases, humana, sin repetir las preguntas:
+Usa 2-3 frases que transmitan su personalidad. Este resumen aparecerá en su perfil de una red social con estética Gen Z.
 
-P1: ${respuestas[0]}
-P2: ${respuestas[1]}
-P3: ${respuestas[2]}
-P4: ${respuestas[3]}
-P5: ${respuestas[4]}
+Respuestas del usuario:
+- ${respuestas[0]}
+- ${respuestas[1]}
+- ${respuestas[2]}
+- ${respuestas[3]}
+- ${respuestas[4]}
 `
+
 
   let descripcion_resumida = 'No disponible'
 
