@@ -17,6 +17,7 @@ app.post('/registro', async (req, res) => {
   const { id, email, nombre_usuario, respuestas } = req.body
 
   if (!id || !email || !nombre_usuario || !respuestas || respuestas.length < 3) {
+    console.error('❌ Datos incompletos recibidos:', req.body)
     return res.status(400).json({ mensaje: 'Faltan datos o respuestas incompletas' })
   }
 
@@ -47,10 +48,17 @@ Genera una descripción breve (entre 2 y 4 frases), que suene fresca, humana y c
     })
 
     const iaRes = await ia.json()
+    console.log('🧠 Respuesta de IA:', iaRes)
+
     descripcion_resumida = iaRes.response?.trim() || 'Error al procesar descripción'
   } catch (err) {
-    console.error('Error con IA:', err)
+    console.error('❌ Error al llamar a la IA:', err)
+    descripcion_resumida = 'Error con IA'
   }
+
+  console.log('📦 Insertando en Supabase:', {
+    id, email, nombre_usuario, respuestas, descripcion_resumida
+  })
 
   const { error } = await supabase.from('usuarios_vitai').insert([{
     id,
@@ -61,12 +69,12 @@ Genera una descripción breve (entre 2 y 4 frases), que suene fresca, humana y c
   }])
 
   if (error) {
-    console.error(error)
-    return res.status(500).json({ mensaje: 'Error al guardar en la DB' })
+    console.error('❌ Error al insertar en Supabase:', error)
+    return res.status(500).json({ mensaje: 'Error al guardar en la DB', error: error.message })
   }
 
   res.json({ mensaje: 'Usuario registrado correctamente' })
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => console.log(`✅ Backend Vitai² en puerto ${PORT}`))
+app.listen(PORT, () => console.log(`✅ Backend Vitai² activo en puerto ${PORT}`))
