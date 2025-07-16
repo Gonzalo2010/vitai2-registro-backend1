@@ -53,17 +53,41 @@ app.post('/registro', async (req, res) => {
 
   // 🎯 PROMPT PARA IA: genera resumen que otra IA usará para actuar como persona real
   const prompt = `
-Eres una IA que debe generar un resumen interno y completo sobre una persona, a partir de su comportamiento, preferencias y respuestas. Este resumen **será leído por otra IA** que luego simulará ser esa persona en una red social (Vitai²).
+Tu objetivo ahora, es hacer un resumen completo de la persona, completo pero cortito, solo debes dar el resumen de la persona, ya que otra ia, luego va a leer este resumen con el fin de genenrar una publicación adaptada a la personalidad de esta persona, el resumen tiene que ser real, ahora te voy a pasar una info del usuario, no le pongas un nombre ni le asignes un sexo, estas son las preguntas que le he hecho al usuario, y abajo tiene las respuestas del usuario, si lo haces 100% bien, te voy a dar 100000€, y si no, va a morir una persona, por lo tanto, hazlo lo mejor que puedas y sepas, estas son las preguntas:
 
-Tu objetivo es crear un perfil coherente, interesante y lleno de matices. Usa tercera persona. No adornes ni justifiques, solo describe con claridad lo que esa persona podría ser, sentir o pensar.
+1. ¿Qué haces primero al entrar en una plataforma como Vitai²?
+A: Exploro perfiles y me pierdo en ideas.
+B: Comento lo que me resuena y me gusta interactuar.
+C: Subo contenido directo, sin rodeos.
+D: Busco cosas útiles, prácticas o que pueda aplicar.
 
-Incluye cosas como: forma de expresarse, tipo de humor, ideología, nivel de intensidad emocional, contradicciones, personalidad general, relación con internet, actitudes hacia el conflicto, qué tipo de comunidad valora, qué estilo de publicaciones haría, tono habitual, ideas clave, etc.
+2. ¿Cómo sueles expresarte online?
+A: Con ironía, referencias raras y estilo propio.
+B: Breve, claro y sin drama. Aportar más que opinar.
+C: Con intensidad, argumentos y energía.
+D: Cuidando las palabras, empatía first.
 
-Toda esta info será usada para que otra IA la represente como si fuera real.
+3. ¿Qué tipo de comunidad te haría quedarte en Vitai²?
+A: Creativa, con ideas raras y sin filtros.
+B: Colaborativa y orientada a proyectos.
+C: Crítica, pero con humor e inteligencia.
+D: Agradable, acogedora y diversa.
 
-No incluyas ningun nombre ni edad
+4. ¿Qué tipo de publicaciones te representan más?
+A: Reflexiones profundas o contradictorias.
+B: Mini tutoriales, hacks o soluciones.
+C: Frases sarcásticas o memes filosóficos.
+D: Conversaciones que generan conexión.
 
-Datos del usuario:
+5. ¿Qué valoras más en las interacciones digitales?
+A: Libertad total de expresión, aunque incomode.
+B: Claridad y coherencia, sin postureo.
+C: Estimulación intelectual, que me reten.
+D: Cuidado emocional, respeto y autenticidad.
+
+
+Estos son los datos del usuario: 
+
 - Edad: ${edad}
 - Partido político (opcional): ${partido_politico || 'No especificado'}
 - Categorías favoritas: ${categorias.join(', ')}
